@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="tr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ayır & Öğren</title>
+        <link rel="stylesheet" href="styles.css?v=1">
+        <script type="importmap">
+            {
+                "imports": {
+                    "three": "https://esm.sh/three@0.161.0?dev",
+                    "three/": "https://esm.sh/three@0.161.0&dev/"
+                }
+            }
+        </script>
+
+        <meta name="title" content="Ayır & Öğren">
+        <meta name="description" content="El hareketleriyle kartları doğru kutuya sürükle: meyve/sebze, canlı/cansız, tek/çift, İngilizce kelimeler...">
+    </head>
+    <body>
+        <div id="renderDiv">
+
+            <div id="game-title" class="text-box">
+                <span id="set-title">AYIR &amp; ÖĞREN</span>
+                <div id="score-line">PUAN 0 · SERİ 0 · 0/8</div>
+                <div id="feedback-line">&nbsp;</div>
+            </div>
+
+            <div id="box-a" class="drop-box">MEYVE</div>
+            <div id="box-b" class="drop-box">SEBZE</div>
+
+            <div id="controls" class="text-box">
+                <div class="controls-header">NASIL OYNANIR</div>
+                Bir elini aç: kart çemberi avucunda belirir; parmaklarını aç/kapa → çember büyür/küçülür<br>
+                Diğer elinle kartı <b>tut</b> (baş + işaret parmağını birleştir), kutuya sürükle, <b>bırak</b><br>
+                Yanlış kutuya atarsan kart çembere geri döner
+            </div>
+
+            <video id="webcam-video" autoplay muted playsinline></video>
+
+            <!-- Start / set picker -->
+            <div id="start-overlay">
+                <div id="start-card" class="text-box">
+                    <h1>🧠 Ayır &amp; Öğren</h1>
+                    <p>Kartları el hareketleriyle doğru kutuya sürükle. Bir set seç:</p>
+                    <select id="set-select"></select>
+                    <p class="small">Kamera ve ses için izin istenecek.</p>
+                    <button id="start-button">▶ BAŞLA</button>
+                </div>
+            </div>
+
+            <!-- Round results -->
+            <div id="game-over-overlay" class="hidden">
+                <div id="game-over-content">
+                    <h1 id="result-title">Tur bitti! 🎉</h1>
+                    <p id="result-text"></p>
+                    <select id="set-select-again"></select>
+                    <button id="restart-button">YENİ TUR</button>
+                    <p class="small credit">Fikir: <a href="https://www.funwithcomputervision.com/" target="_blank" rel="noopener">funwithcomputervision.com</a> · İkonlar: <a href="https://www.thiings.co" target="_blank" rel="noopener">thiings.co</a></p>
+                </div>
+            </div>
+
+        </div>
+        <script type="module" src="main.js?v=1"></script>
+    </body>
+</html>
