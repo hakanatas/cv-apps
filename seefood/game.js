@@ -758,7 +758,11 @@ export class Game {
 
         // Dragging: follow the pinch every frame; only release after several open frames
         if (this.draggedImage) {
-            this.draggedImage.position.set(pinchX + this.dragOffset.x, pinchY + this.dragOffset.y, 3);
+            // Keep the card fully on screen so it can always be reached again
+            const margin = this.imageSize * 0.5;
+            const x = Math.max(-width / 2 + margin, Math.min(width / 2 - margin, pinchX + this.dragOffset.x));
+            const y = Math.max(-height / 2 + margin, Math.min(height / 2 - margin, pinchY + this.dragOffset.y));
+            this.draggedImage.position.set(x, y, 3);
         }
         if (pinchRatio > PINCH_RELEASE) {
             this.releaseFrames++;
@@ -784,16 +788,9 @@ export class Game {
             return;
         }
 
-        // Dropped in the open: snap back into the circle if it's near, else it stays put
-        const circleVisible = this.imageCircle && this.imageCircle.visible;
-        const toCircle = circleVisible
-            ? Math.hypot(sprite.position.x - this.imageCircle.position.x, sprite.position.y - this.imageCircle.position.y)
-            : Infinity;
-        if (toCircle < this._currentCircleRadius() * 1.4) {
-            this._returnToCircle(sprite);
-        } else {
-            sprite.userData.isDetached = true;
-        }
+        // Not dropped in a box: the card always goes back to the circle. Leaving it
+        // parked where it fell stranded cards at the screen edge (hand out of frame).
+        this._returnToCircle(sprite);
     }
 
     _returnToCircle(sprite) {

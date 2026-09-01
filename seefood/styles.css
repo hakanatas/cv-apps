@@ -272,7 +272,7 @@ a:hover {
 /* --- Ayır & Öğren additions --- */
 .drop-box {
     position: absolute;
-    right: 5px;
+    right: 48px; /* keep the dragging hand inside the camera frame */
     width: 220px;
     height: 200px;
     display: flex;
