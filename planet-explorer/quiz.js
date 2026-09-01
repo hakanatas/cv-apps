@@ -35,7 +35,7 @@ const Quiz = (() => {
     let entitiesByIso = null; // Map iso3 -> Cesium entity
     let active = false;
     let locked = false; // true between answer and next question
-    let mode = 'name'; // name | flag | capital | hints
+    let mode = 'hints'; // name | flag | capital | hints
     let region = 'all';
     let target = null; // iso3 of the country to find
     let recent = []; // avoid immediate repeats
@@ -215,6 +215,10 @@ const Quiz = (() => {
     }
 
     function start() {
+        // Read the dropdowns directly: a selection made before init() attached
+        // the change listeners would otherwise be silently ignored.
+        mode = els['quiz-mode'].value;
+        region = els['quiz-region'].value;
         active = true;
         locked = false;
         score = 0;

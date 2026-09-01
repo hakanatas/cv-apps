@@ -63,10 +63,10 @@
     <h3>GEO QUIZ</h3>
     <div class="quiz-row">
       <select id="quiz-mode">
+        <option value="hints" selected>İPUCU (TR)</option>
         <option value="name">BY NAME</option>
         <option value="flag">BY FLAG</option>
         <option value="capital">BY CAPITAL</option>
-        <option value="hints">İPUCU (TR)</option>
       </select>
       <select id="quiz-region">
         <option value="all">WORLD</option>
@@ -102,9 +102,10 @@
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js"></script>
 
-  <script src="effects.js"></script>
-  <script src="countryData.js"></script>
-  <script src="quiz.js"></script>
-  <script src="main.js"></script>
+  <!-- ?v= busts browser/CDN caches — bump it when these files change -->
+  <script src="effects.js?v=3"></script>
+  <script src="countryData.js?v=3"></script>
+  <script src="quiz.js?v=3"></script>
+  <script src="main.js?v=3"></script>
 </body>
 </html>
