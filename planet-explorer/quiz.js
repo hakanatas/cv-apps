@@ -4,7 +4,9 @@
 // The "İPUCU (TR)" mode hides the country name and reveals Turkish hints
 // step by step (region, population, neighbours, capital, flag), spoken aloud.
 const Quiz = (() => {
-    const DWELL_MS = 1200; // how long to hold on a country to answer
+    const DWELL_MS = 1000; // how long to hold on a country to answer
+    const STILL_AFTER_MS = 300; // pointer must settle this long before the dwell charges
+    const STILL_RADIUS_PX = 25; // staying inside this circle counts as "still"
     const HINT_INTERVAL_MS = 10000; // auto-reveal a new hint every 10s
     const PASSPORT_KEY = 'planet-explorer-passport';
 
@@ -44,6 +46,9 @@ const Quiz = (() => {
     let hoverIso = null;
     let hoverStart = 0;
     let dwellRaf = null;
+    let anchorX = null;
+    let anchorY = null;
+    let lastMovedAt = 0;
     let discovered = new Set();
     let hintList = [];
     let hintsRevealed = 0;
@@ -256,7 +261,7 @@ const Quiz = (() => {
         const turkish = CountryData.turkishName(data);
 
         if (mode === 'hints') {
-            els['quiz-prompt'].innerHTML = '🔍 <strong>Gizli ülkeyi bul!</strong><br><span class="quiz-tr">İpuçlarını takip et, ülkeyi parmağınla göster</span>';
+            els['quiz-prompt'].innerHTML = '🔍 <strong>Gizli ülkeyi bul!</strong><br><span class="quiz-tr">Ülkeyi bulunca parmağını üzerinde SABİT tut — çubuk dolunca cevabın işaretlenir</span>';
             hintList = buildHints(target);
             hintsRevealed = 0;
             ['quiz-hints', 'quiz-hint-btn'].forEach((id) => els[id].classList.remove('hidden'));
@@ -384,11 +389,26 @@ const Quiz = (() => {
         markDiscovered(iso);
     }
 
+    // Called by main.js every frame with the pointer's screen position (finger
+    // tip or mouse). While the pointer keeps moving, the dwell never charges —
+    // travelling across the map can no longer trigger accidental answers.
+    function notifyPointer(x, y) {
+        if (anchorX === null || Math.hypot(x - anchorX, y - anchorY) > STILL_RADIUS_PX) {
+            anchorX = x;
+            anchorY = y;
+            lastMovedAt = performance.now();
+        }
+    }
+
     function dwellTick() {
         dwellRaf = active ? requestAnimationFrame(dwellTick) : null;
         if (!active) return;
         let progress = 0;
         if (!locked && hoverIso && target) {
+            const settled = performance.now() - lastMovedAt > STILL_AFTER_MS;
+            if (!settled) {
+                hoverStart = performance.now(); // still travelling — don't charge
+            }
             progress = Math.min(1, (performance.now() - hoverStart) / DWELL_MS);
             if (progress >= 1) {
                 if (hoverIso === target) onCorrect();
@@ -404,6 +424,7 @@ const Quiz = (() => {
     return {
         init,
         onHover,
+        notifyPointer,
         markDiscovered,
         get isActive() { return active; },
     };

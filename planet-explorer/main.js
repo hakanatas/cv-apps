@@ -523,14 +523,19 @@ function handleCountryHover(landmarks) {
         return;
     }
 
+    const indexTip = landmarks[8];
+    const screenX = (1 - indexTip.x) * canvasElement.width;
+    const screenY = indexTip.y * canvasElement.height;
+    // The quiz tracks pointer motion every frame (its dwell only charges
+    // while the finger holds still), so notify before the pick throttle.
+    Quiz.notifyPointer(screenX, screenY);
+
     // scene.pick does a GPU readback — ~10 checks per second is plenty.
     const now = performance.now();
     if (now - lastPickTime < 100) return;
     lastPickTime = now;
 
-    const indexTip = landmarks[8];
-    const screenPosition = new Cesium.Cartesian2((1 - indexTip.x) * canvasElement.width, indexTip.y * canvasElement.height);
-    pickAndHover(screenPosition);
+    pickAndHover(new Cesium.Cartesian2(screenX, screenY));
 }
 
 // Shared hover logic for both the finger pointer and the mouse fallback.
@@ -828,6 +833,7 @@ function onResults(results) {
 function initMouseFallback() {
     document.getElementById('cesiumContainer').addEventListener('mousemove', (event) => {
         if (Date.now() - lastHandDetectedTime < 1000) return; // hands take priority
+        Quiz.notifyPointer(event.clientX, event.clientY);
         const now = performance.now();
         if (now - lastPickTime < 100) return;
         lastPickTime = now;
