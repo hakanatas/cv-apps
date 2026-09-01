@@ -678,7 +678,7 @@ function onResults(results) {
                         // Multiplicative zoom: the same hand movement changes the
                         // height by the same *percentage* at any zoom level, which
                         // feels uniform (additive zoom was jumpy when zoomed in).
-                        const newTargetZoom = targetZoomLevel * Math.exp(deltaY * 6.0);
+                        const newTargetZoom = targetZoomLevel * Math.exp(deltaY * 2.5);
                         targetZoomLevel = safeValue(newTargetZoom, minZoomLevel, maxZoomLevel, targetZoomLevel);
                     }
                     lastRightHandY = smoothedRightHandPosition.y;
@@ -782,7 +782,7 @@ function onResults(results) {
     // Update zoom with validation
     if (now - lastHandDetectedTime < 500) {
         if (typeof targetZoomLevel === 'number' && isFinite(targetZoomLevel)) {
-        const newZoom = currentZoomLevel + (targetZoomLevel - currentZoomLevel) * 0.18;
+        const newZoom = currentZoomLevel + (targetZoomLevel - currentZoomLevel) * 0.12;
         currentZoomLevel = safeValue(newZoom, minZoomLevel, maxZoomLevel, currentZoomLevel);
         smoothedZoom = currentZoomLevel;
         }

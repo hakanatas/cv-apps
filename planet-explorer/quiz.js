@@ -49,6 +49,7 @@ const Quiz = (() => {
     let anchorX = null;
     let anchorY = null;
     let lastMovedAt = 0;
+    let lastWrongIso = null; // a wrongly-guessed country can't re-trigger until the pointer leaves it
     let discovered = new Set();
     let hintList = [];
     let hintsRevealed = 0;
@@ -245,6 +246,7 @@ const Quiz = (() => {
 
     function nextQuestion() {
         locked = false;
+        lastWrongIso = null;
         clearInterval(hintInterval);
         hintInterval = null;
         const pool = buildPool().filter((iso) => !recent.includes(iso));
@@ -345,13 +347,15 @@ const Quiz = (() => {
 
     function onWrong(iso) {
         streak = 0;
+        lastWrongIso = iso; // no repeat trigger until the pointer leaves this country
         updateStats();
         Effects.playWrong();
         const promptHtml = els['quiz-prompt'].innerHTML;
         if (mode === 'hints') {
-            const wrongTurkish = turkishName(iso);
-            els['quiz-prompt'].innerHTML = `❌ Orası <strong>${wrongTurkish}</strong> — aramaya devam!`;
-            Effects.speak(`Orası ${wrongTurkish}. Aramaya devam et!`, 'tr-TR');
+            // Show the wrong country's name on screen only; speaking every
+            // wrong guess aloud drowned out the actual hints.
+            els['quiz-prompt'].innerHTML = `❌ Orası <strong>${turkishName(iso)}</strong> — aramaya devam!`;
+            Effects.speak('Orası değil, aramaya devam!', 'tr-TR');
         } else {
             els['quiz-prompt'].innerHTML = `❌ That was <strong>${countryName(iso)}</strong> — keep looking!`;
         }
@@ -385,6 +389,7 @@ const Quiz = (() => {
         if (iso !== hoverIso) {
             hoverIso = iso;
             hoverStart = performance.now();
+            if (iso !== lastWrongIso) lastWrongIso = null; // left the wrong country — re-arm
         }
         markDiscovered(iso);
     }
@@ -404,7 +409,7 @@ const Quiz = (() => {
         dwellRaf = active ? requestAnimationFrame(dwellTick) : null;
         if (!active) return;
         let progress = 0;
-        if (!locked && hoverIso && target) {
+        if (!locked && hoverIso && target && hoverIso !== lastWrongIso) {
             const settled = performance.now() - lastMovedAt > STILL_AFTER_MS;
             if (!settled) {
                 hoverStart = performance.now(); // still travelling — don't charge
