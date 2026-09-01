@@ -396,7 +396,7 @@ function drawLandmarks(landmarks, isLeft, isPinching = false, isHovering = false
         canvasCtx.lineWidth = 3;
         canvasCtx.textAlign = 'center';
         
-        const labelText = isLeft ? 'ROTATE ↻' : 'ZOOM ⭥';
+        const labelText = isLeft ? 'DÖNDÜR ↻' : 'ZUM ⭥';
         
         canvasCtx.strokeText(labelText, 0, 0);
         canvasCtx.fillText(labelText, 0, 0);
@@ -495,10 +495,10 @@ function renderCountryCard(entity) {
             `<img src="${data.flags.svg}" alt="Flag of ${data.name.common}" style="width:100px;border: 2px solid #000;"><br>` +
             `<strong>${data.name.common}</strong>` +
             (turkish && turkish !== data.name.common ? ` · ${turkish}` : '') +
-            `<br>Capital: ${data.capital?.[0] ?? '—'}` +
-            (data.population > 0 ? `<br>Population: ${data.population.toLocaleString()}` : '') +
-            (currency ? `<br>Currency: ${currency.name} (${currency.symbol ?? ''})` : '') +
-            `<br>Region: ${data.region}`;
+            `<br>Başkent: ${data.capital?.[0] ?? '—'}` +
+            (data.population > 0 ? `<br>Nüfus: ${data.population.toLocaleString('tr-TR')}` : '') +
+            (currency ? `<br>Para birimi: ${currency.name} (${currency.symbol ?? ''})` : '') +
+            `<br>Bölge: ${Quiz.regionTr(data.region, data.subregion)}`;
     }
     infoBox.style.display = 'block';
     // Pronounce the country name while browsing (quiz speaks its own prompts).
@@ -876,8 +876,8 @@ async function startApp() {
         const instructions = document.querySelector('#instructions .content');
         if (instructions) {
             instructions.innerHTML =
-                '<div class="section"><div class="control-item">CAMERA UNAVAILABLE (in use or blocked)</div>' +
-                '<div class="control-item">Use the mouse: drag to rotate, scroll to zoom, hover a country for info</div></div>';
+                '<div class="section"><div class="control-item">KAMERA KULLANILAMIYOR (meşgul ya da engelli)</div>' +
+                '<div class="control-item">Fareyi kullan: sürükle = döndür, tekerlek = zum, ülkenin üzerine gel = bilgi</div></div>';
         }
     }
 }

@@ -122,7 +122,7 @@ const Quiz = (() => {
 
     function updatePassportUi() {
         if (!els['passport-count'] || !entitiesByIso) return;
-        els['passport-count'].textContent = `PASSPORT: ${discovered.size}/${entitiesByIso.size}`;
+        els['passport-count'].textContent = `PASAPORT: ${discovered.size}/${entitiesByIso.size}`;
     }
 
     // --- Turkish hint helpers ---
@@ -223,7 +223,7 @@ const Quiz = (() => {
         locked = false;
         score = 0;
         streak = 0;
-        els['quiz-toggle'].textContent = 'STOP';
+        els['quiz-toggle'].textContent = 'DUR';
         ['quiz-prompt', 'quiz-progress', 'quiz-stats'].forEach((id) => els[id].classList.remove('hidden'));
         nextQuestion();
         if (!dwellRaf) dwellRaf = requestAnimationFrame(dwellTick);
@@ -232,7 +232,7 @@ const Quiz = (() => {
     function stop() {
         active = false;
         target = null;
-        els['quiz-toggle'].textContent = 'START';
+        els['quiz-toggle'].textContent = 'BAŞLA';
         ['quiz-prompt', 'quiz-progress', 'quiz-stats', 'quiz-hints', 'quiz-hint-btn']
             .forEach((id) => els[id].classList.add('hidden'));
         clearInterval(timerInterval);
@@ -306,11 +306,7 @@ const Quiz = (() => {
     }
 
     function updateStats() {
-        const labels = mode === 'hints'
-            ? { score: 'PUAN', streak: 'SERİ', time: 'SÜRE' }
-            : { score: 'SCORE', streak: 'STREAK', time: 'TIME' };
-        els['quiz-stats'].textContent =
-            `${labels.score} ${score}  ·  ${labels.streak} ${streak}  ·  ${labels.time} ${timeLeft}s`;
+        els['quiz-stats'].textContent = `PUAN ${score}  ·  SERİ ${streak}  ·  SÜRE ${timeLeft}s`;
     }
 
     function flash(iso, color) {
@@ -430,11 +426,17 @@ const Quiz = (() => {
         els['quiz-progress-fill'].style.background = hoverIso === target ? '#7CFC00' : '#FFD700';
     }
 
+    // Turkish name for a region/subregion pair (used by the info card too).
+    function regionTr(region, subregion) {
+        return SUBREGION_TR[subregion] || REGION_TR[region] || region;
+    }
+
     return {
         init,
         onHover,
         notifyPointer,
         markDiscovered,
+        regionTr,
         get isActive() { return active; },
     };
 })();
