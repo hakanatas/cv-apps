@@ -4,6 +4,12 @@ import { SETS, DEFAULT_SET, buildRound } from './sets.js';
 import * as Effects from './effects.js';
 
 const ROUND_SIZE = 8;
+// Pinch detection normalized by hand size (thumb-index distance / wrist-palm distance),
+// with hysteresis: a tracked spike during a fast move must not drop the card.
+const PINCH_START = 0.5;
+const PINCH_RELEASE = 0.85;
+const RELEASE_FRAMES = 4;     // open-hand frames in a row before the card is released
+const HAND_LOST_GRACE_MS = 350; // keep the drag alive this long if the tracker loses the hand
 
 // "Ayır & Öğren": one hand holds a rotating circle of cards, the other hand
 // pinches a card and drags it into one of two category boxes. Correct drops
@@ -51,11 +57,10 @@ export class Game {
 
         // Drag and drop
         this.draggedImage = null;
-        this.draggedImageIndex = -1;
         this.isDragging = false;
-        this.dragThreshold = 70;
-        this.releaseThreshold = 80;
         this.dragOffset = new THREE.Vector3();
+        this.releaseFrames = 0;
+        this.dragLostAt = null;
 
         // Particles
         this.particles = [];
@@ -141,7 +146,8 @@ export class Game {
         this.wrongCount = 0;
         this.isDragging = false;
         this.draggedImage = null;
-        this.draggedImageIndex = -1;
+        this.releaseFrames = 0;
+        this.dragLostAt = null;
         this.dragOffset = new THREE.Vector3();
         this.currentRotation = 0;
 
@@ -225,11 +231,7 @@ export class Game {
         this._createParticleEffect(worldPos.x, worldPos.y, 'boom');
 
         // Bounce the card back into the circle
-        if (sprite.parent !== this.imageCircle) {
-            if (sprite.parent) sprite.parent.remove(sprite);
-            this.imageCircle.add(sprite);
-        }
-        sprite.userData.isDetached = false;
+        this._returnToCircle(sprite);
         sprite.material.color.set(0xff7070);
         setTimeout(() => sprite.material.color.set(0xffffff), 700);
 
@@ -370,7 +372,6 @@ export class Game {
         if (!this.hands[0] || !this.hands[0].landmarks) {
             this.imageCircle.visible = false;
             if (this.radarHUD) this.radarHUD.visible = false;
-            if (this.isDragging) this._releaseDrag();
             return;
         }
 
@@ -384,7 +385,6 @@ export class Game {
         this.imageCircle.visible = true;
 
         this._updateRadarHUD(circleRadius);
-        this._handleImageDragging();
 
         this.currentRotation += this.imageRotationSpeed * deltaTime;
         for (const sprite of this.imageSprites) {
@@ -595,7 +595,7 @@ export class Game {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderDiv.appendChild(this.renderer.domElement);
         for (let i = 0; i < 2; i++) {
-            this.hands.push({ landmarks: null, anchorPos: new THREE.Vector3() });
+            this.hands.push({ landmarks: null, anchorPos: new THREE.Vector3(), lastPalm: null, lastSeen: 0 });
         }
     }
 
@@ -617,6 +617,38 @@ export class Game {
         await new Promise((resolve) => { this.videoElement.onloadedmetadata = () => resolve(); });
     }
 
+    // Keeps each physical hand in the same slot across frames (slot 0 = circle,
+    // slot 1 = dragging). MediaPipe's detection order can swap during fast
+    // movement, which used to cancel the drag mid-air.
+    _assignDetections(detections) {
+        const now = performance.now();
+        const assigned = [null, null];
+        const remaining = [...detections];
+        const palmOf = (lm) => lm[9];
+        const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+
+        // Match detections to slots that were recently seen, nearest first
+        const candidates = [];
+        this.hands.forEach((hand, slot) => {
+            if (!hand.lastPalm || now - hand.lastSeen > 1500) return;
+            remaining.forEach((det) => candidates.push({ slot, det, d: dist(palmOf(det), hand.lastPalm) }));
+        });
+        candidates.sort((a, b) => a.d - b.d);
+        for (const c of candidates) {
+            if (assigned[c.slot] || !remaining.includes(c.det)) continue;
+            assigned[c.slot] = c.det;
+            remaining.splice(remaining.indexOf(c.det), 1);
+        }
+        // Anything left goes to a free slot (never seen, or seen longest ago)
+        for (const det of remaining) {
+            const free = [0, 1].filter((s) => !assigned[s]);
+            if (!free.length) break;
+            free.sort((a, b) => this.hands[a].lastSeen - this.hands[b].lastSeen);
+            assigned[free[0]] = det;
+        }
+        return assigned;
+    }
+
     _updateHands(deltaTime) {
         if (!this.handLandmarker || !this.videoElement.srcObject || this.videoElement.readyState < 2) return;
         const videoTime = this.videoElement.currentTime;
@@ -626,19 +658,25 @@ export class Game {
             const results = this.handLandmarker.detectForVideo(this.videoElement, performance.now());
             const width = this.renderDiv.clientWidth;
             const height = this.renderDiv.clientHeight;
+            const assigned = this._assignDetections(results.landmarks || []);
+            const now = performance.now();
+
             for (let i = 0; i < this.hands.length; i++) {
                 const hand = this.hands[i];
-                const raw = results.landmarks && results.landmarks[i];
+                const raw = assigned[i];
                 if (!raw) {
                     hand.landmarks = null;
                     continue;
                 }
-                if (!this.lastLandmarkPositions[i] || this.lastLandmarkPositions[i].length !== raw.length) {
+                const wasTracked = hand.landmarks !== null && now - hand.lastSeen < 300;
+                if (!wasTracked || !this.lastLandmarkPositions[i] || this.lastLandmarkPositions[i].length !== raw.length) {
                     this.lastLandmarkPositions[i] = raw.map((lm) => ({ x: lm.x, y: lm.y, z: lm.z }));
                 }
-                const a = this.smoothingFactor;
                 hand.landmarks = raw.map((lm, idx) => {
                     const prev = this.lastLandmarkPositions[i][idx];
+                    // Adaptive smoothing: steady when still, snappy when moving fast
+                    const speed = Math.hypot(lm.x - prev.x, lm.y - prev.y);
+                    const a = Math.min(0.95, Math.max(0.35, 0.3 + speed * 12));
                     const smoothed = {
                         x: a * lm.x + (1 - a) * prev.x,
                         y: a * lm.y + (1 - a) * prev.y,
@@ -648,9 +686,12 @@ export class Game {
                     return smoothed;
                 });
                 const palm = hand.landmarks[9];
+                hand.lastPalm = { x: palm.x, y: palm.y };
+                hand.lastSeen = now;
                 hand.anchorPos.set((1 - palm.x) * width - width / 2, (1 - palm.y) * height - height / 2, 1);
             }
             this._updateImageCircle(deltaTime);
+            this._handleImageDragging();
         } catch (error) {
             console.error('Error during hand detection:', error);
         }
@@ -659,56 +700,71 @@ export class Game {
     // --- Dragging (second hand) ---
 
     _handleImageDragging() {
-        if (!this.hands[1] || !this.hands[1].landmarks) {
-            if (this.isDragging) this._releaseDrag();
+        const hand = this.hands[1];
+        if (!hand || !hand.landmarks) {
+            // Tracker lost the hand: keep the card in hand for a moment before giving up
+            if (this.isDragging) {
+                if (this.dragLostAt === null) this.dragLostAt = performance.now();
+                else if (performance.now() - this.dragLostAt > HAND_LOST_GRACE_MS) this._releaseDrag();
+            }
             return;
         }
-        const landmarks = this.hands[1].landmarks;
+        this.dragLostAt = null;
+
+        const landmarks = hand.landmarks;
         const width = this.renderDiv.clientWidth;
         const height = this.renderDiv.clientHeight;
         const toScreen = (lm) => [(1 - lm.x) * width - width / 2, (1 - lm.y) * height - height / 2];
         const [thumbX, thumbY] = toScreen(landmarks[4]);
         const [indexX, indexY] = toScreen(landmarks[8]);
+        const [wristX, wristY] = toScreen(landmarks[0]);
+        const [palmX, palmY] = toScreen(landmarks[9]);
         const pinchX = (thumbX + indexX) / 2;
         const pinchY = (thumbY + indexY) / 2;
-        const pinchDistance = Math.hypot(thumbX - indexX, thumbY - indexY);
+        const handScale = Math.max(20, Math.hypot(wristX - palmX, wristY - palmY));
+        const pinchRatio = Math.hypot(thumbX - indexX, thumbY - indexY) / handScale;
 
         if (!this.isDragging) {
-            if (pinchDistance >= this.dragThreshold) return;
+            if (pinchRatio >= PINCH_START) return;
             let closest = null;
             let closestDistance = Infinity;
-            let closestIndex = -1;
-            const detectionRadius = this.imageSize * 0.6;
-            this.imageSprites.forEach((sprite, i) => {
+            const detectionRadius = this.imageSize * 0.75;
+            for (const sprite of this.imageSprites) {
                 const worldPos = new THREE.Vector3();
                 sprite.getWorldPosition(worldPos);
                 const distance = Math.hypot(pinchX - worldPos.x, pinchY - worldPos.y);
                 if (distance < closestDistance && distance < detectionRadius) {
                     closestDistance = distance;
                     closest = sprite;
-                    closestIndex = i;
                 }
-            });
-            if (closest) {
-                this.draggedImage = closest;
-                this.draggedImageIndex = closestIndex;
-                this.isDragging = true;
-                const worldPos = new THREE.Vector3();
-                closest.getWorldPosition(worldPos);
-                this.dragOffset = new THREE.Vector3(worldPos.x - pinchX, worldPos.y - pinchY, 0);
             }
-        } else if (pinchDistance > this.releaseThreshold) {
-            this._releaseDrag();
-        } else if (this.draggedImage) {
-            const newWorldX = pinchX + this.dragOffset.x;
-            const newWorldY = pinchY + this.dragOffset.y;
-            if (this.draggedImage.parent === this.imageCircle) {
-                this.draggedImage.position.set(
-                    newWorldX - this.imageCircle.position.x,
-                    newWorldY - this.imageCircle.position.y, 0);
-            } else {
-                this.draggedImage.position.set(newWorldX, newWorldY, 2);
+            if (!closest) return;
+
+            // Take the card out of the circle group so it no longer depends on the
+            // circle hand (its position is now in world space).
+            const worldPos = new THREE.Vector3();
+            closest.getWorldPosition(worldPos);
+            if (closest.parent !== this.scene) {
+                if (closest.parent) closest.parent.remove(closest);
+                closest.position.set(worldPos.x, worldPos.y, 3);
+                this.scene.add(closest);
             }
+            this.draggedImage = closest;
+            this.isDragging = true;
+            this.releaseFrames = 0;
+            this.dragOffset = new THREE.Vector3(worldPos.x - pinchX, worldPos.y - pinchY, 0);
+            return;
+        }
+
+        // Dragging: follow the pinch every frame; only release after several open frames
+        if (this.draggedImage) {
+            this.draggedImage.position.set(pinchX + this.dragOffset.x, pinchY + this.dragOffset.y, 3);
+        }
+        if (pinchRatio > PINCH_RELEASE) {
+            this.releaseFrames++;
+            if (this.releaseFrames >= RELEASE_FRAMES) this._releaseDrag();
+        } else {
+            this.releaseFrames = 0;
         }
     }
 
@@ -716,8 +772,9 @@ export class Game {
         if (!this.draggedImage || !this.isDragging) return;
         const sprite = this.draggedImage;
         this.draggedImage = null;
-        this.draggedImageIndex = -1;
         this.isDragging = false;
+        this.releaseFrames = 0;
+        this.dragLostAt = null;
         this.dragOffset = new THREE.Vector3();
 
         const zone = this._checkDropZoneCollision(sprite);
@@ -727,18 +784,25 @@ export class Game {
             return;
         }
 
-        // Not dropped in a box: detach if pulled far enough, otherwise it snaps back to the circle
-        if (sprite.parent === this.imageCircle) {
-            const detachThreshold = this._currentCircleRadius() * 1.2;
-            if (sprite.position.length() > detachThreshold) {
-                const worldPos = new THREE.Vector3();
-                sprite.getWorldPosition(worldPos);
-                sprite.userData.isDetached = true;
-                this.imageCircle.remove(sprite);
-                sprite.position.set(worldPos.x, worldPos.y, 2);
-                this.scene.add(sprite);
-            }
+        // Dropped in the open: snap back into the circle if it's near, else it stays put
+        const circleVisible = this.imageCircle && this.imageCircle.visible;
+        const toCircle = circleVisible
+            ? Math.hypot(sprite.position.x - this.imageCircle.position.x, sprite.position.y - this.imageCircle.position.y)
+            : Infinity;
+        if (toCircle < this._currentCircleRadius() * 1.4) {
+            this._returnToCircle(sprite);
+        } else {
+            sprite.userData.isDetached = true;
         }
+    }
+
+    _returnToCircle(sprite) {
+        if (sprite.parent !== this.imageCircle) {
+            if (sprite.parent) sprite.parent.remove(sprite);
+            this.imageCircle.add(sprite);
+        }
+        sprite.userData.isDetached = false;
+        sprite.position.set(0, 0, 0); // re-laid out on the ring next frame
     }
 
     // --- Loop ---
