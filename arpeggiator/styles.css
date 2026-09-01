@@ -1,0 +1,161 @@
+.text-box {
+    padding: 8px 15px;
+    background-color: rgba(255, 255, 255, 0.6);
+    color: black;
+    border-radius: 4px;
+    font-family: "Helvetica Neue", Helvetica, sans-serif;
+    border: 2px solid rgb(53, 47, 108);
+    box-shadow: 3px 3px 0px rgb(23, 17, 77);
+    font-size: clamp(13px, 2vw, 15px);
+    text-align: center;
+    z-index: 200;
+    opacity: 1;
+    transition: opacity 0.3s ease-in-out, bottom 0.3s ease-in-out, box-shadow 0.2s ease;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#info-text {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 15px;
+    background-color: rgba(255, 255, 255, 0.6);
+    color: black;
+    border-radius: 4px;
+    font-family: "Helvetica Neue", Helvetica, sans-serif;
+    border: 2px solid rgb(53, 47, 108);
+    box-shadow: 3px 3px 0px rgb(23, 17, 77);
+    font-size: clamp(20px, 4vw, 30px);
+    text-align: center;
+    z-index: 200;
+}
+
+#instruction-text {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+#social-links {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    text-align: left;
+}
+
+#coffee-link {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+}
+
+#video-link {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+}
+
+/* --- Start overlay --- */
+#start-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 8, 30, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 500;
+}
+
+#start-card {
+    max-width: 520px;
+    margin: 20px;
+    padding: 24px 28px;
+    background-color: rgba(255, 255, 255, 0.92);
+}
+
+#start-card h1 {
+    margin: 0 0 12px 0;
+    font-size: clamp(22px, 4vw, 32px);
+}
+
+#start-card p {
+    text-align: left;
+    line-height: 1.45;
+}
+
+#start-button {
+    margin-top: 12px;
+    padding: 12px 28px;
+    font-size: clamp(16px, 3vw, 20px);
+    font-weight: bold;
+    font-family: inherit;
+    color: white;
+    background: rgb(53, 47, 108);
+    border: 2px solid rgb(23, 17, 77);
+    border-radius: 4px;
+    box-shadow: 3px 3px 0px rgb(23, 17, 77);
+    cursor: pointer;
+}
+
+#start-button:hover {
+    background: rgb(75, 66, 150);
+}
+
+/* --- Control panel --- */
+#control-panel {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    text-align: left;
+    z-index: 300;
+    background-color: rgba(255, 255, 255, 0.75);
+    min-width: 190px;
+}
+
+#control-panel .panel-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 6px 0;
+}
+
+#control-panel label {
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+#control-panel select,
+#control-panel button {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 4px 8px;
+    border: 2px solid rgb(53, 47, 108);
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+}
+
+#control-panel button {
+    flex: 1;
+}
+
+#control-panel button:hover {
+    background: rgb(235, 232, 250);
+}
+
+#control-panel input[type="range"] {
+    flex: 1;
+    accent-color: rgb(53, 47, 108);
+}
+
+#record-btn.recording {
+    background: rgb(215, 40, 40);
+    color: white;
+    border-color: rgb(120, 10, 10);
+}

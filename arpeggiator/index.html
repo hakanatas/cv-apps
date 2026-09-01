@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Arpeggiator</title>
+        <link rel="stylesheet" href="styles.css">
+
+        <!-- Primary Meta Tags -->
+        <meta name="title" content="Arpeggiator">
+        <meta name="description" content="hand-controlled arp, drum machine, real-time visualizer">
+        <script type="importmap">
+            {
+                "imports": {
+                    "three": "https://esm.sh/three@0.161.0?dev",
+                    "three/": "https://esm.sh/three@0.161.0&dev/",
+                    "tone": "https://esm.sh/tone@14.7.77",
+                    "@mediapipe/tasks-vision": "https://esm.sh/@mediapipe/tasks-vision@0.10.14"
+                }
+            }
+        </script>
+    </head>
+    <body style="width: 100%; height: 100%; overflow: hidden; margin: 0;">
+        <div id="renderDiv" style="width: 100%; height: 100%; margin: 0;">
+
+            <span id="info-text">raise your hands to raise the roof</span>
+            <div id="social-links" class="text-box">
+                <b>Right hand — melody:</b> height picks the note, left&nbsp;&harr;&nbsp;right sweeps the filter, pinch sets volume, fist swaps the synth<br>
+                <b>Left hand — drums:</b> raise fingers to toggle kick/snare/hihat/clap, hand height sets the tempo, fist swaps the beat
+            </div>
+
+        </div>
+
+        <!-- Start screen: audio + camera need a user gesture -->
+        <div id="start-overlay">
+            <div id="start-card" class="text-box">
+                <h1>Hand Gesture Arpeggiator</h1>
+                <p>
+                    <b>Right hand</b> plays the melody &mdash; raise it to raise the pitch,
+                    move it sideways to sweep the filter, pinch to set the volume, make a fist to change the synth.<br><br>
+                    <b>Left hand</b> plays the drums &mdash; lift fingers to toggle drums,
+                    raise the hand to speed up the tempo, make a fist to change the beat.
+                </p>
+                <button id="start-button">&#9654; Start (camera &amp; sound)</button>
+            </div>
+        </div>
+
+        <!-- Live control panel -->
+        <div id="control-panel" class="text-box hidden">
+            <div class="panel-row">
+                <label for="scale-select">Scale</label>
+                <select id="scale-select"></select>
+                <select id="root-select" aria-label="Root note"></select>
+            </div>
+            <div class="panel-row">
+                <button id="synth-btn">Synth</button>
+                <button id="bank-btn">Beat</button>
+            </div>
+            <div class="panel-row">
+                <label for="bpm-slider">BPM <span id="bpm-value">100</span></label>
+                <input type="range" id="bpm-slider" min="70" max="160" value="100">
+            </div>
+            <div class="panel-row">
+                <button id="record-btn">&#9679; Record</button>
+            </div>
+        </div>
+
+        <script type="module" src="main.js"></script>
+    </body>
+</html>

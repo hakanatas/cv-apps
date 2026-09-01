@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Planet Explorer</title>
+  <link rel="stylesheet" href="styles.css">
+  
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.110/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.110/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="Planet Explorer">
+  <meta name="description" content="use hand gestures to explore the world">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://funwithcomputervision.com/planet-explorer/">
+  <meta property="og:title" content="Planet Explorer">
+  <meta property="og:description" content="use hand gestures to explore the world">
+  <meta property="og:image" content="https://funwithcomputervision.com/assets/planet-explorer.jpg">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://funwithcomputervision.com/planet-explorer/">
+  <meta property="twitter:title" content="Planet Explorer">
+  <meta property="twitter:description" content="use hand gestures to explore the world">
+  <meta property="twitter:image" content="https://funwithcomputervision.com/assets/planet-explorer.jpg">
+
+</head>
+<body>
+  <video id="webcam" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
+  <div id="cesiumContainer"></div>
+  
+  <div id="layerControls">
+    <h3>MAP LAYERS</h3>
+    <label class="layer-option active">
+      <input type="radio" name="layer" value="terrain" checked> TERRAIN
+    </label>
+    <label class="layer-option">
+      <input type="radio" name="layer" value="streets"> STREETS
+    </label>
+    <label class="layer-option">
+      <input type="radio" name="layer" value="dark"> DARK MODE
+    </label>
+  </div>
+
+  <div id="instructions">
+    <div class="header">CONTROLS</div>
+    <div class="content">
+      <div class="section">
+        <div class="control-item">Each hand shows its role above the wrist:</div>
+        <div class="control-item">ZOOM hand: pinch + move up/down</div>
+        <div class="control-item">ROTATE hand: pinch + drag</div>
+        <div class="control-item">Point at a country for info</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="quizPanel">
+    <h3>GEO QUIZ</h3>
+    <div class="quiz-row">
+      <select id="quiz-mode">
+        <option value="name">BY NAME</option>
+        <option value="flag">BY FLAG</option>
+        <option value="capital">BY CAPITAL</option>
+      </select>
+      <select id="quiz-region">
+        <option value="all">WORLD</option>
+        <option value="Africa">AFRICA</option>
+        <option value="Americas">AMERICAS</option>
+        <option value="Asia">ASIA</option>
+        <option value="Europe">EUROPE</option>
+        <option value="Oceania">OCEANIA</option>
+      </select>
+      <button id="quiz-toggle">START</button>
+    </div>
+    <div id="quiz-prompt" class="hidden"></div>
+    <div id="quiz-progress" class="hidden"><div id="quiz-progress-fill"></div></div>
+    <div id="quiz-stats" class="hidden"></div>
+    <div class="quiz-row" id="passport-row">
+      <span id="passport-count">PASSPORT: 0/180</span>
+      <button id="passport-reset" title="Reset discovered countries">RESET</button>
+      <button id="sound-toggle" title="Sound on/off">🔊</button>
+    </div>
+  </div>
+
+  <div id="logo-container" class="text-box">
+      <span id="logo">🪬</span><br>
+      <a href="https://www.funwithcomputervision.com/" target="_blank">code & tutorials</a>
+  </div>
+
+  <div id="infoBox" style="display: none;"></div>
+
+  <!-- Pinned versions so a CDN release can't silently break the app -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js"></script>
+
+  <script src="effects.js"></script>
+  <script src="countryData.js"></script>
+  <script src="quiz.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
