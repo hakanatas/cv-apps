@@ -247,6 +247,33 @@ a:hover {
     font-size: 12px;
 }
 
+#quiz-hints {
+    padding: 0 8px 6px 8px;
+    font-size: 12px;
+    line-height: 1.6;
+    text-align: left;
+}
+
+.hint-line {
+    background: #f5f0ff;
+    border: 2px solid #7B4394;
+    padding: 3px 6px;
+    margin-bottom: 4px;
+}
+
+#quiz-hint-btn {
+    display: block;
+    margin: 0 8px 8px 8px;
+    width: calc(100% - 16px);
+    background: #FFD700;
+}
+
+#quiz-hint-btn:disabled {
+    background: #eeeeee;
+    color: #999999;
+    cursor: default;
+}
+
 #quiz-progress {
     height: 10px;
     margin: 0 8px 6px 8px;
